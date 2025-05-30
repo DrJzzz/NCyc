@@ -8,9 +8,13 @@ use Getopt::Long;
 my $blast    = "~/bin/blast/bin/blastall";
 my $formatdb = "~/bin/blast/bin/formatdb";
 ##diamond https://github.com/bbuchfink/diamond/releases
-my $diamond = "~/bin/diamond-0.9.14/bin/diamond";
+my $diamond = "~/usr/local/sbin/diamond";
 ##usearch https://www.drive5.com/usearch/download.html
 my $usearch = "~/bin/usearch8.1.1861_i86linux32";
+
+
+## CHANGE THE PATH DO THE DESIERED .faa FILE TO ALIGN WITH
+my $faa_file = "data/NCyc_100_2019.faa";
 
 my ( $workdir, $method, $outfile, $seqtype, $filetype, $sampleinfo, $randomsampling );
 GetOptions(
@@ -41,14 +45,14 @@ my (@files);
 if ( $method eq "diamond" ) {
   die "Please specify the location of diamond!" if !-e $diamond;
   @files = glob("$workdir/*$filetype");
-  my $diamond_db = "$diamond makedb --in data/NCyc_100.faa --db data/NCyc_100";
+  my $diamond_db = "$diamond makedb --in $faa_file --db $faa_file";
   system("$diamond_db");
   foreach my $file (@files) {
     my $out = $file;
     $out =~ s/$filetype/diamond/;
-    system("$diamond blastx -k 1 -e 0.0001 -p 5 -d data/NCyc_100 -q $file -o $out")
+    system("$diamond blastx -k 1 -e 0.0001 -p 5 -d $faa_file -q $file -o $out")
       if $seqtype eq "nucl";
-    system("$diamond blastp -k 1 -e 0.0001 -p 5 -d data/NCyc_100 -q $file -o $out")
+    system("$diamond blastp -k 1 -e 0.0001 -p 5 -d $faa_file -q $file -o $out")
       if $seqtype eq "prot";
     system("cp $out ./");
   }
@@ -62,7 +66,7 @@ elsif ( $method eq "usearch" ) {
   foreach my $file (@files) {
     my $out = $file;
     $out =~ s/$filetype/usearch/;
-    system("$usearch -usearch_global $file -db data/NCyc_100.faa -id 0.3 -blast6out $out");
+    system("$usearch -usearch_global $file -db $faa_file -id 0.3 -blast6out $out");
     system("cp $out ./");
   }
 }
@@ -72,13 +76,13 @@ elsif ( $method eq "blast" ) {
     die "Only fasta files are supported by blast program!";
   }
   @files = glob("$workdir/*$filetype");
-  system("$formatdb -i data/NCyc_100.faa -p T");
+  system("$formatdb -i $faa_file -p T");
   foreach my $file (@files) {
     my $out = $file;
     $out =~ s/$filetype/blast/;
-    system("blastall -p blastp -d data/NCyc_100.faa -i $file -o $out -m 8 -e 1e-4 -b 1 -v 1")
+    system("blastall -p blastp -d $faa_file -i $file -o $out -m 8 -e 1e-4 -b 1 -v 1")
       if $seqtype eq "prot";
-    system("blastall -p blastx -d data/NCyc_100.faa -i $file -o $out -m 8 -e 1e-4 -b 1 -v 1")
+    system("blastall -p blastx -d $faa_file -i $file -o $out -m 8 -e 1e-4 -b 1 -v 1")
       if $seqtype eq "nucl";
     system("cp $out ./");
   }
